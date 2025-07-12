@@ -37,7 +37,7 @@
             this.label1 = new System.Windows.Forms.Label();
             this.txtPhoneNumber = new System.Windows.Forms.TextBox();
             this.btnSendMessage = new System.Windows.Forms.Button();
-            this.button1 = new System.Windows.Forms.Button();
+            this.btn_luudanhsachchuagui = new System.Windows.Forms.Button();
             this.btn_xoatin = new System.Windows.Forms.Button();
             this.txt_tinnhan = new System.Windows.Forms.RichTextBox();
             this.label2 = new System.Windows.Forms.Label();
@@ -47,6 +47,7 @@
             this.label4 = new System.Windows.Forms.Label();
             this.button3 = new System.Windows.Forms.Button();
             this.txt_delay = new System.Windows.Forms.NumericUpDown();
+            this.listBox1 = new System.Windows.Forms.ListBox();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.txt_delay)).BeginInit();
             this.SuspendLayout();
@@ -126,14 +127,15 @@
             this.btnSendMessage.UseVisualStyleBackColor = true;
             this.btnSendMessage.Click += new System.EventHandler(this.btnSendMessage_Click);
             // 
-            // button1
+            // btn_luudanhsachchuagui
             // 
-            this.button1.Location = new System.Drawing.Point(545, 73);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(136, 21);
-            this.button1.TabIndex = 23;
-            this.button1.Text = "Lưu danh sách chưa gửi";
-            this.button1.UseVisualStyleBackColor = true;
+            this.btn_luudanhsachchuagui.Location = new System.Drawing.Point(545, 73);
+            this.btn_luudanhsachchuagui.Name = "btn_luudanhsachchuagui";
+            this.btn_luudanhsachchuagui.Size = new System.Drawing.Size(136, 21);
+            this.btn_luudanhsachchuagui.TabIndex = 23;
+            this.btn_luudanhsachchuagui.Text = "Lưu danh sách chưa gửi";
+            this.btn_luudanhsachchuagui.UseVisualStyleBackColor = true;
+            this.btn_luudanhsachchuagui.Click += new System.EventHandler(this.button1_Click);
             // 
             // btn_xoatin
             // 
@@ -231,11 +233,29 @@
             0,
             0});
             // 
+            // listBox1
+            // 
+            this.listBox1.BackColor = System.Drawing.Color.IndianRed;
+            this.listBox1.Cursor = System.Windows.Forms.Cursors.AppStarting;
+            this.listBox1.ForeColor = System.Drawing.SystemColors.MenuBar;
+            this.listBox1.FormattingEnabled = true;
+            this.listBox1.Items.AddRange(new object[] {
+            "*** LƯU Ý",
+            "",
+            "- Cần ấn nút kết nối trước mới ấn chạy",
+            "- cần để trạng thái light mode , scale 100%",
+            "- Cần xóa thanh search số điện thoại trước khi kết nối"});
+            this.listBox1.Location = new System.Drawing.Point(41, 148);
+            this.listBox1.Name = "listBox1";
+            this.listBox1.Size = new System.Drawing.Size(287, 69);
+            this.listBox1.TabIndex = 31;
+            // 
             // Form2
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.listBox1);
             this.Controls.Add(this.txt_delay);
             this.Controls.Add(this.button3);
             this.Controls.Add(this.label4);
@@ -248,7 +268,7 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.txtPhoneNumber);
             this.Controls.Add(this.btnSendMessage);
-            this.Controls.Add(this.button1);
+            this.Controls.Add(this.btn_luudanhsachchuagui);
             this.Controls.Add(this.btn_xoatin);
             this.Controls.Add(this.txt_tinnhan);
             this.Controls.Add(this.label2);
@@ -272,7 +292,7 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox txtPhoneNumber;
         private System.Windows.Forms.Button btnSendMessage;
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button btn_luudanhsachchuagui;
         private System.Windows.Forms.Button btn_xoatin;
         private System.Windows.Forms.RichTextBox txt_tinnhan;
         private System.Windows.Forms.Label label2;
@@ -282,5 +302,6 @@
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Button button3;
         private System.Windows.Forms.NumericUpDown txt_delay;
+        private System.Windows.Forms.ListBox listBox1;
     }
 }

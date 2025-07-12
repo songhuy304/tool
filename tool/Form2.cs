@@ -42,6 +42,12 @@ namespace tool
         private const int WM_HOTKEY = 0x0312;
         private const int VK_ESCAPE = 0x1B;
 
+        private int GetDelayValue()
+        {
+           return (int)txt_delay.Value;
+
+        }
+
         public Form2()
         {
             InitializeComponent();
@@ -74,6 +80,8 @@ namespace tool
                 StopProcessing();
             }
         }
+
+        
 
         private void StopProcessing()
         {
@@ -164,7 +172,15 @@ namespace tool
             var viber = Process.GetProcessesByName("Viber").FirstOrDefault();
             IntPtr hWnd = viber.MainWindowHandle;
             var sim = new InputSimulator();
-            string tinNhanGui = txt_tinnhan.Text.Trim();
+            string[] messageLines = GetLinesFromRichTextBox(txt_tinnhan);
+
+            if (messageLines.Length == 0)
+            {
+                MessageBox.Show("Vui lòng nhập nội dung tin nhắn!");
+                return;
+            }
+
+            int currentMessageIndex = 0;
 
             ShowWindow(hWnd, SW_RESTORE);
             await Task.Delay(1000, cancellationToken);
@@ -173,6 +189,11 @@ namespace tool
 
             for (int i = 0; i < dataGridView1.Rows.Count; i++)
             {
+
+                // Lấy dòng tin nhắn theo index và tăng index
+                string currentMessage = messageLines[currentMessageIndex];
+                currentMessageIndex = (currentMessageIndex + 1) % messageLines.Length; // Quay vòng khi đến cuối mảng
+
                 // Kiểm tra nếu bị hủy
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -192,15 +213,15 @@ namespace tool
 
                     var searchPos = viberPoints["SearchBox"];
                     ClickAtPosition(searchPos.X, searchPos.Y);
-                    await Task.Delay(600 + 100, cancellationToken);
+                    await Task.Delay(GetDelayValue(), cancellationToken);
 
                     sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_A);
-                    await Task.Delay(700, cancellationToken);
+                    await Task.Delay(GetDelayValue(), cancellationToken);
                     sim.Keyboard.KeyPress(VirtualKeyCode.BACK);
-                    await Task.Delay(700, cancellationToken);
+                    await Task.Delay(GetDelayValue(), cancellationToken);
 
                     sim.Keyboard.TextEntry(sdt);
-                    await Task.Delay(700, cancellationToken);
+                    await Task.Delay(GetDelayValue(), cancellationToken);
 
                     string contact = @"Images\test.png";
                     string da_chat = @"Images\da_chat.png";
@@ -229,10 +250,10 @@ namespace tool
                     }
 
                     // Nếu có tọa độ cần click → thực hiện
-                    await Task.Delay(700, cancellationToken);
+                    await Task.Delay(GetDelayValue(), cancellationToken);
                     ClickAtPosition(clickPoint.Value.X, clickPoint.Value.Y);
 
-                    await Task.Delay(700, cancellationToken);
+                    await Task.Delay(GetDelayValue(), cancellationToken);
 
                     string inputText = @"Images\input_text.png";
                     Point? foundPoint2 = await Task.Run(() => viberCapture.FindTemplatePositionInViber(inputText), cancellationToken);
@@ -241,11 +262,11 @@ namespace tool
                     {
                         viberPoints["input_Text"] = new Point(foundPoint2.Value.X + 140, foundPoint2.Value.Y + 20);
                         var inputPoint = viberPoints["input_Text"];
-                        await Task.Delay(700, cancellationToken);
+                        await Task.Delay(GetDelayValue(), cancellationToken);
                         ClickAtPosition(inputPoint.X, inputPoint.Y);
 
-                        sim.Keyboard.TextEntry(tinNhanGui);
-                        await Task.Delay(600, cancellationToken);
+                        sim.Keyboard.TextEntry(currentMessage);
+                        await Task.Delay(GetDelayValue(), cancellationToken);
                         sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
 
                         dataGridView1.Rows[i].Cells[2].Value = "Đã gửi";
@@ -264,12 +285,7 @@ namespace tool
                     dataGridView1.Rows[i].DefaultCellStyle.BackColor = Color.Red;
                 }
 
-                await Task.Delay(2000, cancellationToken); // Giãn cách giữa 2 tin nhắn
-            }
-
-            if (!cancellationToken.IsCancellationRequested)
-            {
-                MessageBox.Show("Đã gửi hết!");
+                await Task.Delay(2000, cancellationToken); 
             }
         }
 
@@ -302,7 +318,7 @@ namespace tool
             if (foundPoint.HasValue)
             {
                 viberPoints["SearchBox"] = new Point(foundPoint.Value.X + 50, foundPoint.Value.Y + 10);
-                MessageBox.Show("Kết nối thành công");
+                MessageBox.Show(this, "Kết nối thành công", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
             }
             else
@@ -332,7 +348,7 @@ namespace tool
                     string sdt = line.Trim();
                     if (!string.IsNullOrEmpty(sdt))
                     {
-                        dataGridView1.Rows.Add(currentSTT, sdt, "-");
+                        dataGridView1.Rows.Add(currentSTT, sdt, "Chưa gửi");
                         currentSTT++;
                     }
                 }
@@ -355,7 +371,7 @@ namespace tool
                 int sttValue = dataGridView1.Rows.Count + 1;
 
                 // Thêm dòng mới
-                dataGridView1.Rows.Add(sttValue, sdt, "-");
+                dataGridView1.Rows.Add(sttValue, sdt, "Chưa gửi");
 
                 txtPhoneNumber.Clear();
             }
@@ -368,6 +384,54 @@ namespace tool
         private void txt_tinnhan_TextChanged(object sender, EventArgs e)
         {
 
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            // Tạo danh sách để lưu các số điện thoại chưa gửi
+            List<string> unsentNumbers = new List<string>();
+
+            // Duyệt qua tất cả các dòng trong DataGridView
+            foreach (DataGridViewRow row in dataGridView1.Rows)
+            {
+                // Kiểm tra nếu dòng không phải là dòng mới (chưa có dữ liệu)
+                if (!row.IsNewRow)
+                {
+                    // Lấy giá trị từ cột trạng thái (giả sử cột thứ 3 là cột trạng thái)
+                    string status = row.Cells[2].Value?.ToString();
+
+                    // Nếu trạng thái khác "Đã gửi" hoặc chưa có trạng thái
+                    if (status != "Đã gửi")
+                    {
+                        // Lấy số điện thoại từ cột thứ 2 (giả sử)
+                        string phoneNumber = row.Cells[1].Value?.ToString();
+
+                        if (!string.IsNullOrEmpty(phoneNumber))
+                        {
+                            unsentNumbers.Add(phoneNumber);
+                        }
+                    }
+                }
+            }
+
+            // Hiển thị kết quả hoặc lưu vào file
+            if (unsentNumbers.Count > 0)
+            {
+                // Ví dụ: Lưu vào file text
+                SaveFileDialog saveFileDialog = new SaveFileDialog();
+                saveFileDialog.Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
+                saveFileDialog.Title = "Lưu danh sách số chưa gửi";
+
+                if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    File.WriteAllLines(saveFileDialog.FileName, unsentNumbers);
+                    MessageBox.Show($"Đã lưu {unsentNumbers.Count} số chưa gửi vào file.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Không có số điện thoại nào chưa gửi.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
         }
     }
 }
