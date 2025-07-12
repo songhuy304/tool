@@ -42,7 +42,13 @@
             this.txt_tinnhan = new System.Windows.Forms.RichTextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.button2 = new System.Windows.Forms.Button();
+            this.label3 = new System.Windows.Forms.Label();
+            this.textBox1 = new System.Windows.Forms.TextBox();
+            this.label4 = new System.Windows.Forms.Label();
+            this.button3 = new System.Windows.Forms.Button();
+            this.txt_delay = new System.Windows.Forms.NumericUpDown();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.txt_delay)).BeginInit();
             this.SuspendLayout();
             // 
             // dataGridView1
@@ -75,7 +81,7 @@
             // 
             // btn_addfile
             // 
-            this.btn_addfile.Location = new System.Drawing.Point(606, 70);
+            this.btn_addfile.Location = new System.Drawing.Point(464, 73);
             this.btn_addfile.Name = "btn_addfile";
             this.btn_addfile.Size = new System.Drawing.Size(75, 21);
             this.btn_addfile.TabIndex = 18;
@@ -112,9 +118,9 @@
             // 
             // btnSendMessage
             // 
-            this.btnSendMessage.Location = new System.Drawing.Point(96, 327);
+            this.btnSendMessage.Location = new System.Drawing.Point(42, 398);
             this.btnSendMessage.Name = "btnSendMessage";
-            this.btnSendMessage.Size = new System.Drawing.Size(164, 23);
+            this.btnSendMessage.Size = new System.Drawing.Size(141, 23);
             this.btnSendMessage.TabIndex = 14;
             this.btnSendMessage.Text = "Send Message";
             this.btnSendMessage.UseVisualStyleBackColor = true;
@@ -122,11 +128,11 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(687, 70);
+            this.button1.Location = new System.Drawing.Point(545, 73);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 21);
+            this.button1.Size = new System.Drawing.Size(136, 21);
             this.button1.TabIndex = 23;
-            this.button1.Text = "Save list";
+            this.button1.Text = "Lưu danh sách chưa gửi";
             this.button1.UseVisualStyleBackColor = true;
             // 
             // btn_xoatin
@@ -143,16 +149,17 @@
             // 
             // txt_tinnhan
             // 
-            this.txt_tinnhan.Location = new System.Drawing.Point(42, 120);
+            this.txt_tinnhan.Location = new System.Drawing.Point(40, 249);
             this.txt_tinnhan.Name = "txt_tinnhan";
             this.txt_tinnhan.Size = new System.Drawing.Size(287, 96);
             this.txt_tinnhan.TabIndex = 21;
             this.txt_tinnhan.Text = "";
+            this.txt_tinnhan.TextChanged += new System.EventHandler(this.txt_tinnhan_TextChanged);
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(39, 104);
+            this.label2.Location = new System.Drawing.Point(38, 232);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(91, 13);
             this.label2.TabIndex = 20;
@@ -160,19 +167,80 @@
             // 
             // button2
             // 
-            this.button2.Location = new System.Drawing.Point(245, 270);
+            this.button2.Location = new System.Drawing.Point(205, 398);
             this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(164, 23);
+            this.button2.Size = new System.Drawing.Size(122, 23);
             this.button2.TabIndex = 24;
-            this.button2.Text = "starrt";
+            this.button2.Text = "Kết nối";
             this.button2.UseVisualStyleBackColor = true;
             this.button2.Click += new System.EventHandler(this.button2_Click);
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(14, 38);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(48, 13);
+            this.label3.TabIndex = 26;
+            this.label3.Text = "Time out";
+            // 
+            // textBox1
+            // 
+            this.textBox1.Location = new System.Drawing.Point(82, 33);
+            this.textBox1.Name = "textBox1";
+            this.textBox1.Size = new System.Drawing.Size(136, 20);
+            this.textBox1.TabIndex = 25;
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(14, 74);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(62, 13);
+            this.label4.TabIndex = 28;
+            this.label4.Text = "Delay ( ms )";
+            // 
+            // button3
+            // 
+            this.button3.Location = new System.Drawing.Point(687, 74);
+            this.button3.Name = "button3";
+            this.button3.Size = new System.Drawing.Size(75, 20);
+            this.button3.TabIndex = 29;
+            this.button3.Text = "Lưu tất cả";
+            this.button3.UseVisualStyleBackColor = true;
+            // 
+            // txt_delay
+            // 
+            this.txt_delay.Location = new System.Drawing.Point(82, 70);
+            this.txt_delay.Maximum = new decimal(new int[] {
+            300000,
+            0,
+            0,
+            0});
+            this.txt_delay.Minimum = new decimal(new int[] {
+            400,
+            0,
+            0,
+            0});
+            this.txt_delay.Name = "txt_delay";
+            this.txt_delay.Size = new System.Drawing.Size(136, 20);
+            this.txt_delay.TabIndex = 30;
+            this.txt_delay.Value = new decimal(new int[] {
+            700,
+            0,
+            0,
+            0});
             // 
             // Form2
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.txt_delay);
+            this.Controls.Add(this.button3);
+            this.Controls.Add(this.label4);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.textBox1);
             this.Controls.Add(this.button2);
             this.Controls.Add(this.dataGridView1);
             this.Controls.Add(this.btn_addfile);
@@ -187,6 +255,7 @@
             this.Name = "Form2";
             this.Text = "Form2";
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.txt_delay)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -208,5 +277,10 @@
         private System.Windows.Forms.RichTextBox txt_tinnhan;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Button button2;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Button button3;
+        private System.Windows.Forms.NumericUpDown txt_delay;
     }
 }

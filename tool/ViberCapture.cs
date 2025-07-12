@@ -89,7 +89,6 @@ public class ViberCapture
             Bitmap viberBmp = CaptureViberToMemory();
             if (viberBmp == null)
             {
-                MessageBox.Show("Không thể chụp ảnh Viber.");
                 return null;
             }
 
@@ -120,7 +119,6 @@ public class ViberCapture
             {
                 if (template.Empty() || viberImage.Empty())
                 {
-                    MessageBox.Show("Không đọc được ảnh.");
                     return null;
                 }
 
@@ -129,9 +127,8 @@ public class ViberCapture
                 Cv2.MatchTemplate(viberImage, template, result, TemplateMatchModes.CCoeffNormed);
                 Cv2.MinMaxLoc(result, out _, out double maxVal, out _, out OpenCvSharp.Point maxLoc);
 
-                if (maxVal < 0.6)
+                if (maxVal < 0.8)
                 {
-                    MessageBox.Show("Không tìm thấy ảnh mẫu trong ảnh chụp.");
                     return null;
                 }
 
