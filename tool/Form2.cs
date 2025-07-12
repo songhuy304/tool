@@ -20,6 +20,9 @@ namespace tool
         private Dictionary<string, Point> viberPoints = new Dictionary<string, Point>();
         private CancellationTokenSource cancellationTokenSource;
         private bool isProcessing = false;
+        private bool isPaused = false;
+        private int currentRowIndex = 0; // Lưu vị trí hiện tại
+        private int currentMessageIndex = 0; // Lưu index tin nhắn hiện tại
 
         [DllImport("user32.dll")]
         private static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, UIntPtr dwExtraInfo);
@@ -44,8 +47,7 @@ namespace tool
 
         private int GetDelayValue()
         {
-           return (int)txt_delay.Value;
-
+            return (int)txt_delay.Value;
         }
 
         public Form2()
@@ -66,7 +68,7 @@ namespace tool
                 {
                     if (isProcessing)
                     {
-                        StopProcessing();
+                        TogglePauseResume();
                     }
                 }
             }
@@ -77,19 +79,68 @@ namespace tool
         {
             if (e.KeyCode == Keys.Escape && isProcessing)
             {
-                StopProcessing();
+                TogglePauseResume();
             }
         }
 
-        
+        private async void TogglePauseResume()
+        {
+            if (isPaused)
+            {
+                // Tiếp tục
+                await ResumeProcessing();
+            }
+            else
+            {
+                // Tạm dừng
+                PauseProcessing();
+            }
+        }
+
+        private void PauseProcessing()
+        {
+            isPaused = true;
+            btnSendMessage.Text = "Tiếp tục (ESC)";
+            btnSendMessage.BackColor = Color.Orange;
+            MessageBox.Show($"Đã tạm dừng tại dòng {currentRowIndex + 1}!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private async Task ResumeProcessing()
+        {
+            isPaused = false;
+            btnSendMessage.Text = "Tạm dừng (ESC)";
+            btnSendMessage.BackColor = Color.Red;
+
+            // Mở lại cửa sổ Viber và thiết lập lại môi trường
+            var viber = Process.GetProcessesByName("Viber").FirstOrDefault();
+            if (viber != null && viber.MainWindowHandle != IntPtr.Zero)
+            {
+                IntPtr hWnd = viber.MainWindowHandle;
+                ShowWindow(hWnd, SW_RESTORE);
+                await Task.Delay(1000);
+                SetForegroundWindow(hWnd);
+                await Task.Delay(1000);
+            }
+        }
 
         private void StopProcessing()
         {
             if (cancellationTokenSource != null && !cancellationTokenSource.Token.IsCancellationRequested)
             {
                 cancellationTokenSource.Cancel();
-                MessageBox.Show("Đã dừng gửi tin nhắn!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ResetProcessingState();
+                MessageBox.Show("Đã dừng hoàn toàn!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
+        }
+
+        private void ResetProcessingState()
+        {
+            currentRowIndex = 0;
+            currentMessageIndex = 0;
+            isProcessing = false;
+            isPaused = false;
+            btnSendMessage.Text = "Gửi tin nhắn";
+            btnSendMessage.BackColor = SystemColors.Control;
         }
 
         public void ClickAtPosition(int x, int y)
@@ -99,22 +150,30 @@ namespace tool
             mouse_event(MOUSEEVENTF_LEFTUP, (uint)x, (uint)y, 0, UIntPtr.Zero);
         }
 
-
-        // Hàm trả về mảng string chứa tất cả các dòng từ RichTextBox
         public string[] GetLinesFromRichTextBox(RichTextBox rtb)
         {
-            return rtb.Lines; 
+            return rtb.Lines;
         }
 
         private async void btnSendMessage_Click(object sender, EventArgs e)
         {
-            // Nếu đang xử lý thì dừng
             if (isProcessing)
             {
-                StopProcessing();
-                return;
+                if (isPaused)
+                {
+                    // Tiếp tục
+                    await ResumeProcessing();
+                    return;
+                }
+                else
+                {
+                    // Dừng hoàn toàn
+                    StopProcessing();
+                    return;
+                }
             }
 
+            // Bắt đầu mới
             var viber = Process.GetProcessesByName("Viber").FirstOrDefault();
             if (viber == null || viber.MainWindowHandle == IntPtr.Zero)
             {
@@ -137,10 +196,13 @@ namespace tool
 
             // Bắt đầu xử lý
             isProcessing = true;
+            isPaused = false;
+            currentRowIndex = 0;
+            currentMessageIndex = 0;
             cancellationTokenSource = new CancellationTokenSource();
 
             // Thay đổi text button
-            btnSendMessage.Text = "Dừng (ESC)";
+            btnSendMessage.Text = "Tạm dừng (ESC)";
             btnSendMessage.BackColor = Color.Red;
 
             try
@@ -154,9 +216,7 @@ namespace tool
             finally
             {
                 // Kết thúc xử lý
-                isProcessing = false;
-                btnSendMessage.Text = "Gửi tin nhắn";
-                btnSendMessage.BackColor = SystemColors.Control;
+                ResetProcessingState();
 
                 if (cancellationTokenSource != null)
                 {
@@ -180,27 +240,50 @@ namespace tool
                 return;
             }
 
-            int currentMessageIndex = 0;
+            // Thiết lập môi trường Viber ban đầu
+            await SetupViberEnvironment(hWnd, cancellationToken);
 
-            ShowWindow(hWnd, SW_RESTORE);
-            await Task.Delay(1000, cancellationToken);
-            SetForegroundWindow(hWnd);
-            await Task.Delay(1000, cancellationToken);
-
-            for (int i = 0; i < dataGridView1.Rows.Count; i++)
+            // Bắt đầu từ vị trí đã lưu
+            for (int i = currentRowIndex; i < dataGridView1.Rows.Count; i++)
             {
+                // Cập nhật vị trí hiện tại
+                currentRowIndex = i;
 
-                // Lấy dòng tin nhắn theo index và tăng index
-                string currentMessage = messageLines[currentMessageIndex];
-                currentMessageIndex = (currentMessageIndex + 1) % messageLines.Length; // Quay vòng khi đến cuối mảng
+                // Chờ khi bị tạm dừng
+                while (isPaused && !cancellationToken.IsCancellationRequested)
+                {
+                    await Task.Delay(100, cancellationToken);
+                }
 
                 // Kiểm tra nếu bị hủy
                 cancellationToken.ThrowIfCancellationRequested();
 
+                // Sau khi tiếp tục từ pause, thiết lập lại môi trường
+                if (i > 0 && GetForegroundWindow() != hWnd)
+                {
+                    await SetupViberEnvironment(hWnd, cancellationToken);
+                }
+
+                // Lấy dòng tin nhắn theo index và tăng index
+                string currentMessage = messageLines[currentMessageIndex];
+                currentMessageIndex = (currentMessageIndex + 1) % messageLines.Length;
+
                 if (GetForegroundWindow() != hWnd)
                 {
-                    MessageBox.Show("Cửa sổ bị mất hoạt động", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
+                    PauseProcessing();
+                    MessageBox.Show("Cửa sổ bị mất hoạt động. Đã tạm dừng!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+                    // Chờ người dùng tiếp tục
+                    while (isPaused && !cancellationToken.IsCancellationRequested)
+                    {
+                        await Task.Delay(100, cancellationToken);
+                    }
+
+                    // Khi tiếp tục, thiết lập lại môi trường
+                    if (!cancellationToken.IsCancellationRequested)
+                    {
+                        await SetupViberEnvironment(hWnd, cancellationToken);
+                    }
                 }
 
                 try
@@ -241,18 +324,15 @@ namespace tool
                         }
                     }
 
-                    // ❌ Nếu cả 2 ảnh đều không tìm thấy → bỏ qua item này
                     if (!clickPoint.HasValue)
                     {
                         dataGridView1.Rows[i].Cells[2].Value = "Không tìm thấy liên hệ";
                         dataGridView1.Rows[i].DefaultCellStyle.BackColor = Color.Red;
-                        continue; // ➤ Chuyển sang item kế tiếp
+                        continue;
                     }
 
-                    // Nếu có tọa độ cần click → thực hiện
                     await Task.Delay(GetDelayValue(), cancellationToken);
                     ClickAtPosition(clickPoint.Value.X, clickPoint.Value.Y);
-
                     await Task.Delay(GetDelayValue(), cancellationToken);
 
                     string inputText = @"Images\input_text.png";
@@ -285,22 +365,30 @@ namespace tool
                     dataGridView1.Rows[i].DefaultCellStyle.BackColor = Color.Red;
                 }
 
-                await Task.Delay(2000, cancellationToken); 
+                await Task.Delay(2000, cancellationToken);
             }
+
+            // Hoàn thành
+            MessageBox.Show("Đã gửi tin nhắn cho tất cả!", "Hoàn thành", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        // Hàm thiết lập môi trường Viber
+        private async Task SetupViberEnvironment(IntPtr hWnd, CancellationToken cancellationToken)
+        {
+            ShowWindow(hWnd, SW_RESTORE);
+            await Task.Delay(1000, cancellationToken);
+            SetForegroundWindow(hWnd);
+            await Task.Delay(1000, cancellationToken);
         }
 
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
-            // Hủy đăng ký hotkey khi đóng form
             UnregisterHotKey(this.Handle, 1);
             base.OnFormClosed(e);
         }
 
-
-
         private async void button2_Click(object sender, EventArgs e)
         {
-
             var viber = Process.GetProcessesByName("Viber").FirstOrDefault();
             if (viber == null || viber.MainWindowHandle == IntPtr.Zero)
             {
@@ -308,10 +396,8 @@ namespace tool
                 return;
             }
 
-
             var viberCapture = new ViberCapture();
             string inputSearch = @"Images\img-1.png";
-
 
             Point? foundPoint = await Task.Run(() => viberCapture.FindTemplatePositionInViber(inputSearch));
 
@@ -319,13 +405,13 @@ namespace tool
             {
                 viberPoints["SearchBox"] = new Point(foundPoint.Value.X + 50, foundPoint.Value.Y + 10);
                 MessageBox.Show(this, "Kết nối thành công", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
             }
             else
             {
                 MessageBox.Show("Không tìm thấy, hãy thoát ra màn hình viber chính");
             }
         }
+
 
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
@@ -431,6 +517,31 @@ namespace tool
             else
             {
                 MessageBox.Show("Không có số điện thoại nào chưa gửi.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private void btn_xoatin_Click(object sender, EventArgs e)
+        {
+            // Kiểm tra có dòng nào đang được chọn không
+            if (dataGridView1.SelectedRows.Count > 0)
+            {
+                // Xác nhận trước khi xóa
+                var result = MessageBox.Show("Bạn có chắc chắn muốn xóa dòng này?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (result == DialogResult.Yes)
+                {
+                    // Xóa dòng được chọn
+                    foreach (DataGridViewRow row in dataGridView1.SelectedRows)
+                    {
+                        if (!row.IsNewRow)
+                        {
+                            dataGridView1.Rows.Remove(row);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("Vui lòng chọn dòng muốn xóa.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
     }
